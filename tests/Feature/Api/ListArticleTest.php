@@ -7,7 +7,10 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Sanctum;
+use Tests\MakesJsonApiRequests;
 use Tests\TestCase;
+
 
 class ListArticleTest extends TestCase
 {
@@ -23,13 +26,14 @@ class ListArticleTest extends TestCase
 
             $article = Article::factory()->create(); // creamos un artículo
             $user = User::factory()->create();   // creamos un usuario
-            $token = $user->createToken('test-token')->plainTextToken; // Creamos un token
-            
+            //$token = $user->createToken('test-token')->plainTextToken; // Creamos un token
+            Sanctum::actingAs($user);
            
 
             $url =Route('api.v1.articles.show', $article);
-            $response = $this->getJson($url, ['Authorization' => $token,  //pasamos las cabeceras 'accept y Authorization
-            'Accept' => "application/vnd.api+json"]);
+            $response = $this->getJson($url);
+            //, ['Authorization' => $token,  //pasamos las cabeceras 'accept y Authorization
+            //'Accept' => "application/vnd.api+json"]);
     
             
             $response->assertExactJson([
@@ -50,60 +54,34 @@ class ListArticleTest extends TestCase
             
     }
 
-      /**
-     * @return void
-     * @test
-     */
-    public function can_fetch_all_articles():void
+    /** @test */
+    public function can_fetch_all_articles()
     {
-        $this->withoutExceptionHandling();
-
         $articles = Article::factory()->count(3)->create();
 
-        $response = $this->getJson(route('api.v1.articles.index'), ['Accept' => "application/vnd.api+json"]);
+        $response = $this->getJson(route('api.v1.articles.index'));
 
-        $response->assertJson([
-            'data' => [
-                [
-                    'type' => 'articles',
-                    'id' => (string) $articles[0]->getRouteKey(),
-                    'attributes' => [
-                        'title' => $articles[0]->title,
-                        'slug' => $articles[0]->slug,
-                        'content' => $articles[0]->content,
-                    ],
-                    'links' => [
-                        'self' => route('api.v1.articles.show', $articles[0])
-                    ]
-                ],
-                [
-                    'type' => 'articles',
-                    'id' => (string) $articles[1]->getRouteKey(),
-                    'attributes' => [
-                        'title' => $articles[1]->title,
-                        'slug' => $articles[1]->slug,
-                        'content' => $articles[1]->content,
-                    ],
-                    'links' => [
-                        'self' => route('api.v1.articles.show', $articles[1])
-                    ]
-                ],
-                [
-                    'type' => 'articles',
-                    'id' => (string)$articles[2]->getRouteKey(),
-                    'attributes' => [
-                        'title' => $articles[2]->title,
-                        'slug' => $articles[2]->slug,
-                        'content' => $articles[2]->content,
-                    ],
-                    'links' => [
-                        'self' => route('api.v1.articles.show', $articles[2])
-                    ]
-                ]
-            ],
-            'links' => [
-            'self' => route('api.v1.articles.index')
-            ]
+        $response->assertJsonApiResourceCollection($articles, [
+            'title', 'slug', 'content'
         ]);
-    }
+  }
+
+  
+
+    /** @test */  
+    /*   TODAVÍA NO FUNCIONA --> CREAR ERRORES
+    public function it_returns_a_json_api_error_object_when_an_article_is_not_found()
+    {
+        $this->getJson(route('api.v1.articles.show', 'not-existing'))
+            ->assertJsonApiError(
+                title: "Not Found",
+                detail: "No records found with the id 'not-existing' in the 'articles' resource.",
+                status: "404"
+            );
+    } */ 
 }
+
+
+
+
+

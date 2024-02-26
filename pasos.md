@@ -19,6 +19,13 @@
 ## 3- CREAR ARTICLE CONTROLADOR --resource (si no lo hemos creado con el modelo)
     3.1 - implementar métodos
     3.2 - Crear Article Resource  ** php artisan make:resource ArticleResource ** -> añadir estructura sin 'data'
+        - Sobreescribir el método toResponse del padre para enviar location
+                public function toResponse($request)
+                    {
+                        return parent::toResponse($request)->withHeaders([
+                            'Location' => route('api.v1.articles.show', $this->resource)
+                        ]);
+                    }
     3.3 - Crear Article Collection ** php artisan make:resource ArticleCollection ** añadir link
 
 ## 4- CREAR RUTA apiResource (si no está creada con el resource)
@@ -31,7 +38,7 @@
     5.4 - Crear el método login + -> Crear Ruta
     5.5 - Crear el método logout + -> Crear Ruta
     5.6 - Modificar Constructor del ArticleController:
-        -    public function __construct()
+        -    public function __construct() // OPCIONAL O PROTEGER RUTAS
     {
         $this->middleware('auth:sanctum', [
             'only' => ['store', 'update', 'destroy']  <-> para requerir token
@@ -78,8 +85,18 @@
 
 
 ## 11- CREAR LOS TESTS
-    11.1 - $this->withoutExceptionHandling();                           - MANEJAR ERRORES -
-    11.2 - $article = Article::factory()->create();                     - CREAR ARTÍCULO -
-    11.3 - $user = User::factory()->create;                             - CREAR UN USUARIO -
-    11.4 - $token = $user->createToken('test-token')->plainTextToken;   - CREAR UN TOKEN -
-    11.3 - $response = $this->getJson(route('api.v1.articles.show', $article), [AÑADIR CABECERAS NECESARIAS]);
+    
+    11.1 - Crear JsonApi/JsonApiTestResponse.php -> mixins para extender tests
+    11.2 - Darlo de alta en Providers/JsonApiServiceProvider.php <-> TestResponse::mixin(new JsonApiTestResponse());
+         - Crear trait en tests/ MakesJsonApiRequests (sólo crear y ya sin comandos)
+         - Añadirlo a test/TestCase.php 
+    11.3 - limpiar todo rastro de $model->getResourceType() y poner tipo de modelo y empezar tests
+
+    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    11.4 - $this->withoutExceptionHandling();                           - MANEJAR ERRORES -
+    11.5 - $article = Article::factory()->create();                     - CREAR ARTÍCULO -
+      
+      // AQUÍ EL PLAN B //
+
+     $response = $this->getJson(route('api.v1.articles.show', $article), [AÑADIR CABECERAS NECESARIAS]);
